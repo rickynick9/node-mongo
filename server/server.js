@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
 
@@ -64,6 +65,42 @@ app.delete('/todos/:id', (req, res) => {
     return res.send({todo});
   }).catch((e) => {
     return res.status(400).send();
+  });
+
+});
+
+//we are going to set-up patch route. This will allow us to update
+app.patch('/todos/:id', (req, res) => {
+  var id = req.params.id;
+  // user can pass-in anything in the request body to be update.
+  // we do not want user to update completed since it is set by the back-end.
+  // we can use lodash pick method which will pick the properties specific properties from the
+  // request body if they exist.
+
+  console.log('request body is : ', req.body);
+  var body = _.pick(req.body, ['text', 'completed']);
+  if(!ObjectID.isValid(id)) {
+    res.status(404).send();
+  }
+
+  if(_.isBoolean(body.completed) && body.completed) {
+    //is completed is true set completedAt
+
+    body.completedAt = new Date().getTime();
+    console.log('if part completed at : ', body.completedAt);
+  } else {
+    console.log('else part completed is : ', body.completed);
+    body.completed = false;
+    body.completedAt = null;
+  }
+
+  Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todo) => {
+    if(!todo) {
+      res.status(404).send();
+    }
+    res.send({todo});
+  }).catch((e) => {
+    res.status(400).send();
   });
 
 });
